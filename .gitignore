@@ -1,0 +1,4 @@
+# ignore molecule/testinfra pycache
+**/__pycache__
+.vscode
+roles/ednz_cloud.*
