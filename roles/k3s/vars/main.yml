@@ -1,0 +1,28 @@
+---
+# vars file for k3s
+k3s_binary_path: /usr/local/bin/k3s
+k3s_config_path: "{{ k3s_config_dir }}/config.yml"
+k3s_service_name: k3s
+
+k3s_user: root
+k3s_group: root
+
+k3s_github_api: https://api.github.com/repos
+k3s_github_project: k3s-io/k3s
+k3s_github_url: https://github.com
+
+k3s_deb_architecture_map:
+  x86_64: "amd64"
+  aarch64: "arm64"
+  armv7l: "arm"
+  armv6l: "arm"
+
+k3s_architecture: "{{ k3s_deb_architecture_map[ansible_architecture] | default(ansible_architecture) }}"
+
+k3s_wite_kubeconfig_mode: '0644'
+
+k3s_configuration:
+  https-listen-port: "{{ k3s_listen_port }}"
+  bind-address: "{{ k3s_bind_addr }}"
+  advertise-address: "{{ k3s_advertise_addr }}"
+  advertise-port: '{{ k3s_advertise_port }}'

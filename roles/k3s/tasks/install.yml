@@ -1,0 +1,99 @@
+---
+# task/install file for k3s
+- name: "K3S | Get latest release of k3s"
+  when: k3s_version == 'latest'
+  block:
+    - name: "K3S | Get latest k3s release from github api"
+      ansible.builtin.uri:
+        url: "{{ k3s_github_api }}/{{ k3s_github_project }}/releases/latest"
+        return_content: true
+      register: _k3s_latest_release
+
+    - name: "K3S | Set wanted k3s version to latest tag"
+      ansible.builtin.set_fact:
+        _k3s_wanted_version: "{{ _k3s_latest_release.json['tag_name'] }}"
+
+- name: "K3S | Set wanted k3s version to {{ k3s_version }}"
+  ansible.builtin.set_fact:
+    _k3s_wanted_version: "{{ k3s_version }}"
+  when: k3s_version != 'latest'
+
+- name: "K3S | Get current k3s version"
+  block:
+    - name: "K3S | Stat k3s version file"
+      ansible.builtin.stat:
+        path: "{{ k3s_config_dir }}/.version"
+      changed_when: false
+      check_mode: false
+      register: _k3s_version_file
+
+    - name: "K3S | Get current k3s version"
+      ansible.builtin.slurp:
+        src: "{{ _k3s_version_file.stat.path }}"
+      when:
+        - _k3s_version_file.stat.exists
+        - _k3s_version_file.stat.isreg
+      register: _k3s_current_version
+
+- name: "K3S | Install k3s"
+  when: _k3s_current_version is not defined
+    or _k3s_wanted_version != (_k3s_current_version.content|default('')|b64decode)
+  block:
+    - name: "K3S | Set k3s package name to download"
+      ansible.builtin.set_fact:
+        _k3s_package_name: >-
+          k3s{% if k3s_architecture == 'arm' %}-armhf{% endif %}{% if k3s_architecture == 'arm64'%}{{ k3s_architecture }}{% endif %}
+        _k3s_shasum_file_name: >-
+          sha256sum-{{ k3s_architecture }}.txt
+
+    - name: "K3S | Download checksum file for k3s binary"
+      ansible.builtin.get_url:
+        url: "{{ k3s_github_url }}/{{ k3s_github_project }}/releases/download/{{ _k3s_wanted_version }}/{{ _k3s_shasum_file_name }}"
+        dest: "/tmp/{{ _k3s_shasum_file_name }}"
+        mode: "0644"
+      register: _k3s_checksum_file
+      until: _k3s_checksum_file is succeeded
+      retries: 5
+      delay: 2
+      check_mode: false
+
+    - name: "K3S | Extract correct checksum from checksum file"
+      ansible.builtin.command:
+        cmd: 'grep "{{ _k3s_package_name }}$" /tmp/{{ _k3s_shasum_file_name }}'
+      changed_when: false
+      register: _k3s_expected_checksum_line
+
+    - name: "K3S | Parse the expected checksum"
+      ansible.builtin.set_fact:
+        _k3s_expected_checksum: "{{ _k3s_expected_checksum_line.stdout.split()[0] }}"
+
+    - name: "K3S | Install k3s version:{{ k3s_version }}"
+      ansible.builtin.get_url:
+        url: "{{ k3s_github_url }}/{{ k3s_github_project }}/releases/download/{{ _k3s_wanted_version }}/{{ _k3s_package_name }}"
+        dest: "{{ k3s_binary_path }}"
+        mode: "0755"
+        checksum: "sha256:{{ _k3s_expected_checksum }}"
+      register: _k3s_download_binary
+      until: _k3s_download_binary is succeeded
+      retries: 5
+      delay: 2
+      check_mode: false
+
+    - name: "K3S | Update k3s version file"
+      ansible.builtin.copy:
+        content: "{{ _k3s_wanted_version }}"
+        dest: "{{ k3s_config_dir }}/.version"
+        owner: "{{ k3s_user }}"
+        group: "{{ k3s_group }}"
+        mode: "0600"
+
+    - name: "K3S | Set restart-check variable"
+      ansible.builtin.set_fact:
+        _k3s_service_need_restart: true
+
+    - name: "K3S | Cleanup temporary directory"
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /tmp/{{ _k3s_shasum_file_name }}

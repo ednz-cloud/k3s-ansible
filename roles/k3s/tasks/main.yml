@@ -1,0 +1,15 @@
+---
+# task/main file for k3s
+- name: "K3S | Set reload-check & restart-check variable"
+  ansible.builtin.set_fact:
+    _k3s_service_need_reload: false
+    _k3s_service_need_restart: false
+
+# - name: "K3S | Import merge_variables.yml"
+#   ansible.builtin.include_tasks: merge_variables.yml
+
+- name: "K3S | Import prerequisites.yml"
+  ansible.builtin.include_tasks: prerequisites.yml
+
+- name: "K3S | Import install.yml"
+  ansible.builtin.include_tasks: install.yml
