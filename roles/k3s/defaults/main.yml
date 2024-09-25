@@ -5,23 +5,38 @@ k3s_start_service: true
 k3s_config_dir: /etc/rancher/k3s
 k3s_data_dir: /var/lib/rancher/k3s
 
+k3s_env_variables: {}
+
+k3s_extra_files: false
+k3s_extra_files_list: []
+
 k3s_mode: server  # can be server or agent
 k3s_bind_addr: "0.0.0.0"
 k3s_listen_port: 6443
+k3s_join_token: "CHANGEME!CHANGEME!CHANGEME!CHANGEME!"
 k3s_advertise_addr: "{{ ansible_default_ipv4.address }}"
 k3s_advertise_port: "{{ k3s_listen_port }}"
+k3s_tls_sans:
+  - "{{ ansible_default_ipv4.address }}"
+  - "{{ ansible_hostname }}"
 
+k3s_cluster_init: false
 
-k3s_datastore_configuration:
-  datastore-endpoint:
-  datastore-cafile:
-  datastore-certfile:
-  datastore-keyfile:
+# See https://docs.k3s.io/cli/server#database for possible configuration options
+k3s_datastore_configuration: {}
 
+# See https://docs.k3s.io/cli/server#networking for possible configuration options
 k3s_networking_configuration:
-  cluster-cidr: "10.42.0.0/16"
+  cluster-cidr: "10.47.0.0/16"
   service-cidr: "10.43.0.0/16"
   service-node-port-range: "30000-32767"
   cluster-dns: "10.43.0.10"
   cluster-domain: "cluster.local"
   flannel-backend: vxlan
+
+# See https://docs.k3s.io/cli/server#kubernetes-components for possible configuration options
+k3s_components_configuration:
+  disable:
+    - traefik
+    - local-storage
+    - servicelb

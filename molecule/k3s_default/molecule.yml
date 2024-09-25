@@ -4,16 +4,14 @@ dependency:
   # options:
   #   requirements-file: ./requirements.yml
 driver:
-  name: docker
+  name: vagrant
+  provider:
+    name: libvirt
 platforms:
   - name: instance
-    image: geerlingguy/docker-${MOLECULE_TEST_OS}-ansible
-    command: ""
-    volumes:
-      - /sys/fs/cgroup:/sys/fs/cgroup
-    cgroupns_mode: host
-    privileged: true
-    pre_build_image: true
+    box: generic/${MOLECULE_TEST_OS}
+    cpus: 2
+    memory: 2048
 provisioner:
   name: ansible
   config_options:

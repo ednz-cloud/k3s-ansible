@@ -5,11 +5,39 @@
     _k3s_service_need_reload: false
     _k3s_service_need_restart: false
 
-# - name: "K3S | Import merge_variables.yml"
-#   ansible.builtin.include_tasks: merge_variables.yml
+- name: "K3S | Import merge_variables.yml"
+  ansible.builtin.include_tasks: merge_variables.yml
 
 - name: "K3S | Import prerequisites.yml"
   ansible.builtin.include_tasks: prerequisites.yml
 
 - name: "K3S | Import install.yml"
   ansible.builtin.include_tasks: install.yml
+
+- name: "K3S | Import configure.yml"
+  ansible.builtin.include_tasks: configure.yml
+
+- name: "K3S | Populate service facts"
+  ansible.builtin.service_facts:
+
+- name: "K3S | Set restart-check variable"
+  ansible.builtin.set_fact:
+    _k3s_service_need_restart: true
+  when: ansible_facts.services[k3s_service_name~'.service'].state != 'running'
+
+- name: "K3S | Enable service: {{ k3s_service_name }}"
+  ansible.builtin.service:
+    name: "{{ k3s_service_name }}"
+    enabled: true
+
+- name: "K3S | Reload systemd daemon"
+  ansible.builtin.systemd:
+    daemon_reload: true
+  when: _k3s_service_need_reload
+
+- name: "K3S | Start service: {{ k3s_service_name }}"
+  ansible.builtin.service:
+    name: "{{ k3s_service_name }}"
+    state: restarted
+  throttle: 1
+  when: _k3s_service_need_restart

@@ -97,3 +97,18 @@
         state: absent
       loop:
         - /tmp/{{ _k3s_shasum_file_name }}
+
+- name: "K3S | Copy systemd service file for nomad"
+  ansible.builtin.template:
+    src: "k3s.service.j2"
+    dest: "/etc/systemd/system/{{ k3s_service_name }}.service"
+    owner: root
+    group: root
+    mode: "0644"
+  register: _k3s_unit_file
+
+- name: "K3S | Set reload-check & restart-check variable"
+  ansible.builtin.set_fact:
+    _k3s_service_need_reload: true
+    _k3s_service_need_restart: true
+  when: _k3s_unit_file.changed # noqa: no-handler
