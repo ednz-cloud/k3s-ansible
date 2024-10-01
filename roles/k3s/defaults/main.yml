@@ -11,32 +11,76 @@ k3s_extra_files: false
 k3s_extra_files_list: []
 
 k3s_mode: server  # can be server or agent
-k3s_bind_addr: "0.0.0.0"
-k3s_listen_port: 6443
-k3s_join_token: "CHANGEME!CHANGEME!CHANGEME!CHANGEME!"
-k3s_advertise_addr: "{{ ansible_default_ipv4.address }}"
-k3s_advertise_port: "{{ k3s_listen_port }}"
-k3s_tls_sans:
+
+# Change this if you need nodes to join a cluster
+k3s_join_addr:
+k3s_server_join_token: "CHANGEME!CHANGEME!CHANGEME!CHANGEME!"
+k3s_agent_join_token: "{{ k3s_server_join_token }}"
+
+# See https://docs.k3s.io/cli/server#logging for server options
+# See https://docs.k3s.io/cli/agent#logging for agent options
+k3s_logging_options: {}
+
+# Server configuration options
+# This is only merged to the configuration file if k3s_mode == 'server'
+
+k3s_server_cluster_init: false
+k3s_server_listen_port: 6443
+k3s_server_advertise_addr: "{{ ansible_default_ipv4.address }}"
+k3s_server_tls_sans:
   - "{{ ansible_default_ipv4.address }}"
   - "{{ ansible_hostname }}"
+k3s_server_enable_secrets_encryption: false
 
-k3s_cluster_init: false
+# See https://docs.k3s.io/cli/server#listeners for configuration options
+k3s_server_listeners_options:
+  bind-address: "0.0.0.0"
+  https-listen-port: 6443
+  advertise-address: "{{ k3s_server_advertise_addr }}"
+  advertise-port: "{{ k3s_server_listen_port }}"
 
-# See https://docs.k3s.io/cli/server#database for possible configuration options
-k3s_datastore_configuration: {}
+# See https://docs.k3s.io/cli/server#database for configuration options
+k3s_server_datastore_options: {}
 
-# See https://docs.k3s.io/cli/server#networking for possible configuration options
-k3s_networking_configuration:
-  cluster-cidr: "10.47.0.0/16"
+# See https://docs.k3s.io/cli/server#networking for configuration options
+k3s_server_networking_options:
+  cluster-cidr: "10.42.0.0/16"
   service-cidr: "10.43.0.0/16"
   service-node-port-range: "30000-32767"
   cluster-dns: "10.43.0.10"
   cluster-domain: "cluster.local"
   flannel-backend: vxlan
 
-# See https://docs.k3s.io/cli/server#kubernetes-components for possible configuration options
-k3s_components_configuration:
+# See https://docs.k3s.io/cli/server#kubernetes-components for configuration options
+k3s_server_components_options:
   disable:
     - traefik
     - local-storage
     - servicelb
+
+# See https://docs.k3s.io/cli/server#experimental-options for configuration options
+k3s_server_experimental_options: {}
+
+# See https://docs.k3s.io/cli/server#storage-class for configuration options
+k3s_server_storage_class_options: {}
+
+# See https://docs.k3s.io/cli/server#customized-flags-for-kubernetes-processes for configuration options
+k3s_server_processes_flags_options: {}
+
+# Agent configuration options
+# This is only merged to the configuration file if k3s_mode == 'agent'
+
+# See https://docs.k3s.io/cli/agent#runtime for configuration options
+k3s_agent_networking_options: {}
+
+# See https://docs.k3s.io/cli/agent#node for configuration options
+k3s_agent_node_options: {}
+
+# See https://docs.k3s.io/cli/agent#networking for configuration options
+k3s_agent_runtime_options: {}
+
+# See https://docs.k3s.io/cli/agent#customized-flags for configuration options
+k3s_agent_processes_flags_options: {}
+
+# See https://docs.k3s.io/cli/agent#experimental for configuration options
+k3s_agent_experimental_options: {}

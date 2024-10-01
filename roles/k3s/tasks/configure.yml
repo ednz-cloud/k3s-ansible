@@ -7,14 +7,25 @@
     mode: "0600"
   register: _k3s_env_file
 
-- name: "K3S | Create token file"
+- name: "K3S | Create server token file"
   ansible.builtin.copy:
-    content: "{{ k3s_join_token }}"
-    dest: "{{ k3s_token_file_path }}"
+    content: "{{ k3s_server_join_token }}"
+    dest: "{{ k3s_server_token_file_path }}"
     owner: "{{ k3s_user }}"
     group: "{{ k3s_group }}"
     mode: "0600"
-  register: _k3s_token_file
+  register: _k3s_server_token_file
+  when:
+    - k3s_mode == 'server'
+
+- name: "K3S | Create agent token file"
+  ansible.builtin.copy:
+    content: "{{ k3s_agent_join_token }}"
+    dest: "{{ k3s_agent_token_file_path }}"
+    owner: "{{ k3s_user }}"
+    group: "{{ k3s_group }}"
+    mode: "0600"
+  register: _k3s_agent_token_file
 
 - name: "K3S | Copy config.yml template"
   ansible.builtin.template:
@@ -29,7 +40,8 @@
   ansible.builtin.set_fact:
     _k3s_service_need_restart: true
   when: _k3s_env_file.changed or
-    _k3s_token_file.changed or
+    _k3s_server_token_file.changed or
+    _k3s_agent_token_file.changed or
     _k3s_config_file.changed
 
 - name: "K3S | Copy extra configuration files"

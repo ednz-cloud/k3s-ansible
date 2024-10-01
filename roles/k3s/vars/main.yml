@@ -2,7 +2,8 @@
 # vars file for k3s
 k3s_binary_path: /usr/local/bin/k3s
 k3s_config_path: "{{ k3s_config_dir }}/k3s.config.yml"
-k3s_token_file_path: "{{ k3s_config_dir }}/token"
+k3s_server_token_file_path: "{{ k3s_config_dir }}/server_token"
+k3s_agent_token_file_path: "{{ k3s_config_dir }}/agent_token"
 k3s_service_name: k3s
 
 k3s_user: root
@@ -20,13 +21,26 @@ k3s_deb_architecture_map:
 
 k3s_architecture: "{{ k3s_deb_architecture_map[ansible_architecture] | default(ansible_architecture) }}"
 
-k3s_wite_kubeconfig_mode: '0644'
+k3s_default_join_addr: https://localhost:6443
+
+k3s_needs_to_join: >-
+  {{
+    (not k3s_server_cluster_init) and
+    (k3s_join_addr | default(k3s_default_join_addr)) != k3s_default_join_addr
+  }}
+
+k3s_write_kubeconfig_mode: '0644'
 
 k3s_configuration:
   data-dir: "{{ k3s_data_dir }}"
-  https-listen-port: "{{ k3s_listen_port }}"
-  bind-address: "{{ k3s_bind_addr }}"
-  advertise-address: "{{ k3s_advertise_addr }}"
-  advertise-port: "{{ k3s_advertise_port }}"
-  tls-san: "{{ k3s_tls_sans }}"
-  token-file: "{{ k3s_token_file_path }}"
+
+k3s_server_configuration:
+  cluster-init: "{{ k3s_server_cluster_init if k3s_server_cluster_init else omit }}"
+  server: "{{ k3s_join_addr if k3s_needs_to_join else omit }}"
+  secrets-encryption: "{{ k3s_server_enable_secrets_encryption }}"
+  token-file: "{{ k3s_server_token_file_path }}"
+  agent-token-file: "{{ k3s_agent_token_file_path }}"
+
+k3s_agent_configuration:
+  server: "{{ k3s_join_addr }}"
+  token-file: "{{ k3s_agent_token_file_path }}"
