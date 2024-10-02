@@ -40,6 +40,7 @@ k3s_server_configuration:
   secrets-encryption: "{{ k3s_server_enable_secrets_encryption }}"
   token-file: "{{ k3s_server_token_file_path }}"
   agent-token-file: "{{ k3s_agent_token_file_path }}"
+  tls-san: "{{ k3s_server_tls_sans }}"
 
 k3s_agent_configuration:
   server: "{{ k3s_join_addr }}"
