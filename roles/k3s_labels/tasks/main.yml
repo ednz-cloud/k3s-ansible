@@ -1,0 +1,66 @@
+---
+# task/main file for k3s_labels
+- name: "K3S Labels | Get current node declaration"
+  kubernetes.core.k8s_info:
+    kubeconfig: "{{ k3s_labels_kubeconfig_path }}"
+    context: "{{ k3s_labels_kubeconfig_context }}"
+    api_version: v1
+    kind: Node
+    name: "{{ k3s_labels_node_name }}"
+  register: _k3s_labels_node_spec
+
+- name: "K3S Labels | Fail if no or multiple nodes found"
+  ansible.builtin.assert:
+    that:
+      - _k3s_labels_node_spec.resources | length == 1
+    success_msg: "Node {{ k3s_labels_node_name }} found !"
+    fail_msg: "Something is wrong, found {{ _k3s_labels_node_spec.resources | length }} node(s) matching name {{ k3s_labels_node_name }}"
+
+- name: "K3S Labels | Set current list on labels"
+  ansible.builtin.set_fact:
+    _k3s_labels_current_labels: "{{ _k3s_labels_node_spec.resources[0].metadata.labels }}"
+
+- name: "K3S Labels | Prepare label dictionary to apply"
+  block:
+    - name: "K3S Labels | Get list of labels to keep"
+      ansible.builtin.set_fact:
+        _k3s_labels_full_keep_list: >-
+          {{
+            k3s_labels_keep +
+            (k3s_labels_keep_default_labels | ternary(k3s_labels_default_labels, []))
+          }}
+
+    - name: "K3S Labels | Get dict of labels to re-apply"
+      ansible.builtin.set_fact:
+        _k3s_labels_to_apply: >-
+          {{
+            _k3s_labels_current_labels | ansible.utils.keep_keys(target=_k3s_labels_full_keep_list)
+          }}
+
+    - name: "K3S Labels | Add new labels to the append list"
+      ansible.builtin.set_fact:
+        _k3s_labels_to_apply: >-
+          {{
+            _k3s_labels_to_apply | combine(k3s_labels_append)
+          }}
+
+- name: "K3S Labels | Apply new labels to node"
+  kubernetes.core.k8s_json_patch:
+    kubeconfig: "{{ k3s_labels_kubeconfig_path }}"
+    context: "{{ k3s_labels_kubeconfig_context }}"
+    api_version: v1
+    kind: Node
+    name: "{{ k3s_labels_node_name }}"
+    patch:
+      - op: replace
+        path: /metadata/labels
+        value: "{{ _k3s_labels_to_apply }}"
+
+- name: "K3S Labels | Get current node declaration"
+  kubernetes.core.k8s_info:
+    kubeconfig: "{{ k3s_labels_kubeconfig_path }}"
+    context: "{{ k3s_labels_kubeconfig_context }}"
+    api_version: v1
+    kind: Node
+    name: "{{ k3s_labels_node_name }}"
+  register: _k3s_labels_node_spec

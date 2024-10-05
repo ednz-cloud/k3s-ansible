@@ -1,0 +1,13 @@
+---
+# vars file for k3s_labels
+k3s_labels_default_labels:
+  - beta.kubernetes.io/arch
+  - beta.kubernetes.io/instance-type
+  - beta.kubernetes.io/os
+  - kubernetes.io/arch
+  - kubernetes.io/hostname
+  - kubernetes.io/os
+  - node.kubernetes.io/instance-type
+  - node-role.kubernetes.io/etcd
+  - node-role.kubernetes.io/control-plane
+  - node-role.kubernetes.io/master
