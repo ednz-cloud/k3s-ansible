@@ -1,5 +1,5 @@
 ---
-# default file for k3s
+# defaults file for k3s
 k3s_version: "v1.31.1+k3s1"
 k3s_start_service: true
 k3s_config_dir: /etc/rancher/k3s
